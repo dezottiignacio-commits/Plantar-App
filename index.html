@@ -243,7 +243,9 @@ const APP_URL='https://claude.ai/artifact/FtHz6JEVpsf3eJ45EXLi6G';
 async function enviarWeb(p){const c=p.cliente||{};
   const d={c:p.codigo,t:p.creado,cl:{nom:c.nom||'',cuit:c.cuit||'',tel:c.tel||'',dir:c.dir||'',loc:c.loc||''},it:(p.items||[]).map(i=>[i.codigo,i.cant]),en:p.entrega,ev:p.envio||null,pago:p.pago||'',obs:p.obs||''};
   const body=new URLSearchParams({'form-name':'pedido',codigo:p.codigo,cliente:c.nom||'',cuit:c.cuit||'',telefono:c.tel||'',resumen:waTexto(p),datos:'#PEDIDO '+JSON.stringify(d)});
-  const r=await fetch('/',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:body.toString()});return r.ok}
+  const a=fetch('https://script.google.com/macros/s/AKfycbwwj1Hi1BuHeQQrCduhzw5U_xBuPCE4ywHfBXFF7IngNruuPItblSNok9pzbsegEtN9/exec',{method:'POST',mode:'no-cors',body:body}).then(()=>true).catch(()=>false);
+  const b=fetch('/',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:body.toString()}).then(r=>r.ok).catch(()=>false);
+  const [x,y]=await Promise.all([a,b]);return x||y}
 const MAIL_PED='dezottiignacio@campotecsas.com.ar';
 function mailUrl(p){const c=p.cliente||{};
   const d={c:p.codigo,t:p.creado,cl:{nom:c.nom||'',cuit:c.cuit||'',tel:c.tel||'',dir:c.dir||'',loc:c.loc||''},it:(p.items||[]).map(i=>[i.codigo,i.cant]),en:p.entrega,ev:p.envio||null,pago:p.pago||'',obs:p.obs||''};
