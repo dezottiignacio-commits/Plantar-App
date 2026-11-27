@@ -240,6 +240,15 @@ function abrirOk(p){const sh=$('#sheet');sh.hidden=false;sh.className='sheet';
     <a class="btn ${p.enDb?'wa':'sec'}" style="margin-top:12px" href="${waUrl(p)}" target="_blank" rel="noopener" id="waGo">${p.enDb?'Enviar pedido por WhatsApp':'O mandalo por WhatsApp'}</a>
     <button class="btn sec" style="margin-top:12px" id="cerrarOk">Ver mis compras</button></div>`}
 const APP_URL='https://claude.ai/artifact/FtHz6JEVpsf3eJ45EXLi6G';
+const GAS_URL='https://script.google.com/macros/s/AKfycbwwj1Hi1BuHeQQrCduhzw5U_xBuPCE4ywHfBXFF7IngNruuPItblSNok9pzbsegEtN9/exec';
+/* visitas en vivo: cada pestaña abierta avisa cada 45 s qué está mirando (sin cookies, se borra sola a los 2 min) */
+var _sid='',_lat=0;
+function latido(force){try{if(document.hidden||typeof byC==='undefined'||typeof S==='undefined')return;const now=Date.now();if(now-_lat<(force?8000:40000))return;_lat=now;
+  if(!_sid){try{_sid=sessionStorage.getItem('pl_sid')||''}catch(e){}if(!_sid){_sid=Math.random().toString(36).slice(2,10)+now.toString(36);try{sessionStorage.setItem('pl_sid',_sid)}catch(e){}}}
+  const p=S.verP&&byC.get(S.verP);
+  const b=new URLSearchParams({tipo:'vivo',sid:_sid,v:S.tab||'',p:p?p.c:'',pn:p?String(p.n).slice(0,80):'',q:S.tab==='cat'&&S.q?S.q.slice(0,40):'',n:String(cartN()),cli:((S.cli&&S.cli.nom)||'').slice(0,60),mob:/Mobi|Android|iPhone/i.test(navigator.userAgent)?'1':''});
+  fetch(GAS_URL,{method:'POST',mode:'no-cors',credentials:'omit',body:b}).catch(()=>{})}catch(e){}}
+setInterval(()=>latido(false),45000);document.addEventListener('visibilitychange',()=>{if(!document.hidden){_lat=0;latido(true)}});setTimeout(()=>latido(true),4000);
 async function enviarWeb(p){const c=p.cliente||{};
   const d={c:p.codigo,t:p.creado,cl:{nom:c.nom||'',cuit:c.cuit||'',tel:c.tel||'',dir:c.dir||'',loc:c.loc||''},it:(p.items||[]).map(i=>[i.codigo,i.cant]),en:p.entrega,ev:p.envio||null,pago:p.pago||'',obs:p.obs||''};
   const body=new URLSearchParams({'form-name':'pedido',codigo:p.codigo,cliente:c.nom||'',cuit:c.cuit||'',telefono:c.tel||'',resumen:waTexto(p),datos:'#PEDIDO '+JSON.stringify(d)});
@@ -275,7 +284,7 @@ function verProd(c){const p=byC.get(c);if(!p)return;S.verP=c;pres();const n=S.ca
   $('#padd').onclick=()=>{const q=Math.max(1,Math.round(+$('#pq').value||1));S.cart[c]=q;saveCart();cerrarSheet();render();toast('Agregado al carrito')}}
 
 const VISTA={cat:'Mirando el catálogo',car:'En el carrito',mis:'En Mis compras',dat:'En Mis datos'};
-function pres(){if(!S.room)return;const p=S.verP&&byC.get(S.verP);
+function pres(){setTimeout(()=>latido(true),0);if(!S.room)return;const p=S.verP&&byC.get(S.verP);
   S.room.presence({v:S.tab,p:p?p.c:null,pn:p?String(p.n).slice(0,80):null,n:cartN(),q:S.tab==='cat'&&S.q?S.q.slice(0,40):null,cli:(S.cli.nom||'').slice(0,60)||null,adm:S.adm||null}).catch(()=>{})}
 function otros(){return S.peers.filter(x=>x.kind==='viewer'&&!x.isMe&&!(x.presence&&x.presence.adm))}
 async function updLive(){if(!S.adm)return;const o=otros();$('#liveN').textContent=o.length;
