@@ -24,5 +24,10 @@ falt=set()
 for p in cat.get('productos',[]):
   if p.get('i') and not os.path.exists(os.path.join(F,p['i']+'.jpg')):falt.add(p['i']);del p['i']
   if p.get('sp') and not os.path.exists(os.path.join(F,p['sp'][0]+'.jpg')):falt.add(p['sp'][0]);del p['sp']
+# fotos por part number (f/pp_<código>.jpg): se usan cuando el producto no tiene foto en Gestión
+for p in cat.get('productos',[]):
+  if not p.get('i') and not p.get('sp'):
+    pp='pp_'+str(p.get('c',''))
+    if os.path.exists(os.path.join(F,pp+'.jpg')):p['i']=pp
 json.dump(cat,open(os.path.join(R,'catalogo.json'),'w'),ensure_ascii=False,separators=(',',':'))
 print(json.dumps({'productos':len(cat.get('productos',[])),'faltan':sorted(falt)}))
