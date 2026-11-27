@@ -243,12 +243,19 @@ const APP_URL='https://claude.ai/artifact/FtHz6JEVpsf3eJ45EXLi6G';
 const GAS_URL='https://script.google.com/macros/s/AKfycbwwj1Hi1BuHeQQrCduhzw5U_xBuPCE4ywHfBXFF7IngNruuPItblSNok9pzbsegEtN9/exec';
 /* visitas en vivo: cada pestaña abierta avisa cada 45 s qué está mirando (sin cookies, se borra sola a los 2 min) */
 var _sid='',_lat=0;
-function latido(force){try{if(document.hidden||typeof byC==='undefined'||typeof S==='undefined')return;const now=Date.now();if(now-_lat<(force?8000:40000))return;_lat=now;
+function latido(force){try{if(VIVO_K||document.hidden||typeof byC==='undefined'||typeof S==='undefined')return;const now=Date.now();if(now-_lat<(force?8000:40000))return;_lat=now;
   if(!_sid){try{_sid=sessionStorage.getItem('pl_sid')||''}catch(e){}if(!_sid){_sid=Math.random().toString(36).slice(2,10)+now.toString(36);try{sessionStorage.setItem('pl_sid',_sid)}catch(e){}}}
   const p=S.verP&&byC.get(S.verP);
   const b=new URLSearchParams({tipo:'vivo',sid:_sid,v:S.tab||'',p:p?p.c:'',pn:p?String(p.n).slice(0,80):'',q:S.tab==='cat'&&S.q?S.q.slice(0,40):'',n:String(cartN()),cli:((S.cli&&S.cli.nom)||'').slice(0,60),mob:/Mobi|Android|iPhone/i.test(navigator.userAgent)?'1':''});
   fetch(GAS_URL,{method:'POST',mode:'no-cors',credentials:'omit',body:b}).catch(()=>{})}catch(e){}}
 setInterval(()=>latido(false),45000);document.addEventListener('visibilitychange',()=>{if(!document.hidden){_lat=0;latido(true)}});setTimeout(()=>latido(true),4000);
+/* modo Plantar en la web: abrir una vez https://plantar-app.netlify.app/?admin=CLAVE y queda activo en ese dispositivo */
+var VIVO_K='';try{const u=new URLSearchParams(location.search).get('admin');if(u){localStorage.setItem('pl_vivo',u);history.replaceState(null,'',location.pathname+location.hash)}VIVO_K=localStorage.getItem('pl_vivo')||''}catch(e){}
+async function vivoPoll(){if(!VIVO_K||document.hidden)return;try{const r=await fetch(GAS_URL+'?k='+encodeURIComponent(VIVO_K)+'&_='+Date.now(),{credentials:'omit'}).then(r=>r.json());
+  if(!r.vivos){VIVO_K='';try{localStorage.removeItem('pl_vivo')}catch(e){}return}
+  S.peers=r.vivos.map(x=>({kind:'viewer',isMe:false,by:null,guest:false,updatedAt:Date.now()-x.hace*1000,presence:{v:x.v,p:x.p||null,pn:x.pn||null,q:x.q||null,n:x.n,cli:x.cli||null,mob:x.mob}}));
+  if(!S.adm){S.adm=true;$('#liveBtn').hidden=false;render()}updLive()}catch(e){}}
+setTimeout(vivoPoll,1500);setInterval(vivoPoll,15000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)vivoPoll()});
 async function enviarWeb(p){const c=p.cliente||{};
   const d={c:p.codigo,t:p.creado,cl:{nom:c.nom||'',cuit:c.cuit||'',tel:c.tel||'',dir:c.dir||'',loc:c.loc||''},it:(p.items||[]).map(i=>[i.codigo,i.cant]),en:p.entrega,ev:p.envio||null,pago:p.pago||'',obs:p.obs||''};
   const body=new URLSearchParams({'form-name':'pedido',codigo:p.codigo,cliente:c.nom||'',cuit:c.cuit||'',telefono:c.tel||'',resumen:waTexto(p),datos:'#PEDIDO '+JSON.stringify(d)});
@@ -298,9 +305,9 @@ function drawLive(){const sh=$('#sheet');const o=otros();
   ${o.length?'<div class="stack">'+o.map(x=>{const pr=x.presence||{};const nom=(x.by&&S.names[x.by])||pr.cli||(x.guest?'Invitado':'Cliente');
     const que=pr.p?'Viendo: '+esc(pr.pn||pr.p)+' <span class="mut">('+esc(pr.p)+')</span>':pr.q?'Buscando "'+esc(pr.q)+'"':esc(VISTA[pr.v]||'Abrió la app');
     return `<div class="card peer"><div class="av">${esc(String(nom).trim().charAt(0).toUpperCase()||'?')}</div><div class="grow"><div class="b">${esc(nom)}${pr.cli&&x.by&&S.names[x.by]&&pr.cli!==S.names[x.by]?' <span class="mut sm">· '+esc(pr.cli)+'</span>':''}</div>
-      <div class="sm">${que}</div><div class="mut sm">${pr.n?'🛒 '+pr.n+' en el carrito · ':''}${hace(x.updatedAt)}</div></div></div>`}).join('')+'</div>'
+      <div class="sm">${que}</div><div class="mut sm">${pr.n?'🛒 '+pr.n+' en el carrito · ':''}${pr.mob===true?'Celular · ':pr.mob===false?'Compu · ':''}${hace(x.updatedAt)}</div></div></div>`}).join('')+'</div>'
   :'<div class="empty">No hay clientes con la app abierta ahora.</div>'}
-  <div class="note" style="margin-top:14px">Aparecen los clientes que entran con su cuenta de Claude. Los que abren el link sin cuenta no se pueden ver en vivo: su pedido te llega igual por WhatsApp.</div></div>`;
+  <div class="note" style="margin-top:14px">Se actualiza solo. Cada cliente desaparece de la lista uno o dos minutos después de cerrar la app.</div></div>`;
   $('#cerrarLive').onclick=()=>{S.liveOpen=false;cerrarSheet()}}
 function abrirLive(){S.liveOpen=true;const sh=$('#sheet');sh.hidden=false;sh.className='sheet';drawLive();updLive()}
 function render(){const m=$('#main');pres();$('#searchBar').hidden=S.tab!=='cat';
