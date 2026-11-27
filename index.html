@@ -148,8 +148,11 @@ function cartN(){return Object.values(S.cart).reduce((a,b)=>a+b,0)}
 function saveCart(){LS.set('cart',S.cart);const n=cartN();const b=$('#badge');b.hidden=!n;b.textContent=n}
 function addCart(c,n=1){S.cart[c]=(S.cart[c]||0)+n;if(S.cart[c]<=0)delete S.cart[c];saveCart();render()}
 
-function filtrar(){const q=S.q.trim().toLowerCase();const qs=q.split(/\s+/).filter(Boolean);
-  return S.cat.filter(p=>(!S.marca||p.m===S.marca)&&(!S.k||p.k===S.k)&&(!qs.length||qs.every(w=>(p.c+' '+p.n+' '+(p.al||'')+' '+(p.k||'')+' '+(p.s||'')).toLowerCase().includes(w))))}
+const sinAc=t=>String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+function filtrar(){const q=sinAc(S.q.trim());const qs=q.split(/\s+/).filter(Boolean);
+  const a=S.cat.filter(p=>(!S.marca||p.m===S.marca)&&(!S.k||p.k===S.k)&&(!qs.length||qs.every(w=>(p._t||(p._t=sinAc(p.c+' '+p.n+' '+(p.al||'')+' '+(p.k||'')+' '+(p.s||'')))).includes(w))));
+  if(!q)return a;const sc=p=>{const c=sinAc(p.c),n=sinAc(p.n);return c===q?0:c.startsWith(q)?1:n.startsWith(q)?2:n.includes(q)?3:4};
+  return a.map((p,i)=>[sc(p),i,p]).sort((x,y)=>x[0]-y[0]||x[1]-y[1]).map(x=>x[2])}
 function vCat(){const a=filtrar();const cats=S.marca?[...new Set(S.cat.filter(p=>p.m===S.marca).map(p=>p.k).filter(Boolean))].sort():[];
   let h=`<div class="chips">${['',...MARCAS].map(m=>`<button class="chip ${S.marca===m?'on':''}" data-m="${esc(m)}">${m||'Todas las marcas'}</button>`).join('')}</div>`;
   if(cats.length>1)h+=`<div class="chips" style="padding-top:4px">${['',...cats].map(k=>`<button class="chip ${S.k===k?'on':''}" data-k="${esc(k)}" style="font-weight:500">${esc(k||'Todas las categorías')}</button>`).join('')}</div>`;
@@ -197,7 +200,7 @@ function leerCli(){const g=id=>($('#'+id)||{}).value;const c={...S.cli};for(cons
 function vDat(){return `<h2>Mis datos</h2>${formCli()}<div class="mut sm" style="margin-top:10px">${S.db&&S.uid?'✓ Conectado con tu cuenta: tus pedidos se registran en Plantar automáticamente.':'Sin cuenta conectada: tus pedidos se envían por WhatsApp.'}${S.dbErr?' (último error: '+esc(S.dbErr)+')':''}</div><div style="margin-top:12px"><button class="btn" id="guardarDat">Guardar</button></div>
   <div class="card" style="margin-top:14px"><b>Plantar · Casa Central</b><div class="mut sm" style="margin-top:4px">Intendente Loinas 151 Este, Marcos Juárez, Córdoba<br>WhatsApp <span style="user-select:all">${WA_TXT}</span></div></div>
   <div class="note" style="margin-top:12px"><b>Instalala en tu celular:</b> en iPhone tocá Compartir → "Agregar a inicio"; en Android, el menú ⋮ → "Agregar a la pantalla principal".</div>`}
-const EST={nuevo:['Enviado','pend'],recibido:['Recibido por Plantar','ok'],pendiente:['Recibido por Plantar','ok'],facturado:['Facturado','ok'],remitido:['En entrega','ok'],entregado:['Entregado','ok'],cancelado:['Cancelado','']};
+const EST={nuevo:['Enviado a Plantar','pend'],recibido:['Recibido por Plantar','ok'],pendiente:['Recibido por Plantar','ok'],facturado:['Facturado','ok'],remitido:['En entrega','ok'],entregado:['Entregado','ok'],cancelado:['Cancelado','']};
 const PASOS=[['preparando','Preparando'],['despachado','Despachado'],['en_camino','En camino'],['entregado','Entregado']];
 function trackHtml(p){if(p.entrega!=='envio'||!p.numero)return '';const t=p.track||{};const est=t.estado||(p.estado==='entregado'?'entregado':'preparando');const k=Math.max(0,PASOS.findIndex(x=>x[0]===est));
   return `<div class="trk"><div class="b sm" style="margin-bottom:8px">Seguimiento del envío</div><div class="pasos">${PASOS.map((x,i)=>`<div class="paso ${i<=k?'on':''}"><span></span>${x[1]}</div>`).join('')}</div>
